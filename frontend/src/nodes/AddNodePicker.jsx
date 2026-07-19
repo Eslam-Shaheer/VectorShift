@@ -5,10 +5,25 @@ import { nodeRegistry, paletteGroups } from './registry';
 // Reusable node picker popover. `trigger` is the clickable element, `onPick`
 // receives the chosen type, and `filter(type)` limits the offered nodes (e.g.
 // quick-add needs a target handle; edge-insert needs both a target and source).
-export function AddNodePicker({ trigger, onPick, filter = () => true, side = 'right', onOpenChange }) {
+// `trigger` mode: the picker owns a clickable trigger.
+// `anchor` mode: caller controls `open`/`onOpenChange` and supplies an element
+// to anchor the popover to (used when the ReactFlow Handle itself is the "+").
+export function AddNodePicker({
+  trigger,
+  anchor,
+  open,
+  onPick,
+  filter = () => true,
+  side = 'right',
+  onOpenChange,
+}) {
   return (
-    <Popover.Root onOpenChange={onOpenChange}>
-      <Popover.Trigger asChild>{trigger}</Popover.Trigger>
+    <Popover.Root open={open} onOpenChange={onOpenChange}>
+      {anchor ? (
+        <Popover.Anchor asChild>{anchor}</Popover.Anchor>
+      ) : (
+        <Popover.Trigger asChild>{trigger}</Popover.Trigger>
+      )}
       <Popover.Portal>
         <Popover.Content
           side={side}

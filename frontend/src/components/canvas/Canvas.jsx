@@ -9,11 +9,11 @@ import ReactFlow, {
   Panel,
 } from 'reactflow';
 import { Undo2, Redo2, LayoutGrid, Trash } from 'lucide-react';
-import { useStore } from './store';
+import { useStore } from '@/store';
 import { shallow } from 'zustand/shallow';
-import { nodeTypes } from './nodes/nodeTypes';
-import { ButtonEdge } from './nodes/ButtonEdge';
-import { NodeContextMenu, PaneContextMenu } from './nodes/ContextMenu';
+import { nodeTypes } from '@/nodes/nodeTypes';
+import { ButtonEdge } from './ButtonEdge';
+import { NodeContextMenu, PaneContextMenu } from './ContextMenu';
 
 import 'reactflow/dist/style.css';
 
@@ -55,7 +55,7 @@ function EmptyState() {
 const isTypingTarget = (el) =>
   el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
 
-export const PipelineUI = () => {
+export const Canvas = () => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [menu, setMenu] = useState(null); // { x, y, nodeId? }

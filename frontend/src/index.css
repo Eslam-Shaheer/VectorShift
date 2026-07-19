@@ -119,6 +119,29 @@
 .react-flow__handle:hover {
   transform: scale(1.15);
 }
+
+/* Source "+" handle: the handle itself is the add/connect button, so it drags
+   to connect (native) and clicks to open the picker. Kept ReactFlow-absolute
+   (offset just outside the node edge) so connection init works. */
+.react-flow__handle.vs-plus-handle {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--color-vs-surface);
+  border: 1px solid var(--color-vs-border-strong);
+  color: var(--color-vs-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+.react-flow__handle.vs-plus-handle:hover {
+  transform: translateY(-50%);
+  border-color: var(--color-vs-accent);
+  background: var(--color-vs-accent-tint);
+  color: var(--color-vs-accent-hover);
+}
 .react-flow__handle:hover,
 .react-flow__handle.connectionindicator:hover,
 .react-flow__handle-connecting,

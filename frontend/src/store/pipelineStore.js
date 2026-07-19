@@ -8,8 +8,8 @@ import {
   applyEdgeChanges,
   MarkerType,
 } from 'reactflow';
-import { nodeRegistry } from './nodes/registry';
-import { firstHandle, layoutGraph } from './lib/graph';
+import { nodeRegistry } from '@/nodes/registry';
+import { firstHandle, layoutGraph } from '@/lib/graph';
 
 // Single source of truth for edge appearance, shared by manual connects, "+"
 // quick-add and edge-insert so every edge looks identical.

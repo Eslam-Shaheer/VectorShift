@@ -1,6 +1,6 @@
-// draggableNode.js — a palette chip the user drags onto the canvas.
+// PaletteNode — a palette chip the user drags onto the canvas.
 
-export const DraggableNode = ({ type, label, icon: Icon }) => {
+export const PaletteNode = ({ type, label, icon: Icon }) => {
   const onDragStart = (event, nodeType) => {
     event.dataTransfer.setData(
       'application/reactflow',

@@ -3,7 +3,7 @@ import { BaseEdge, EdgeLabelRenderer, getBezierPath } from 'reactflow';
 import { X, Plus } from 'lucide-react';
 import { useStore } from '@/store';
 import { hasHandle } from '@/lib/graph';
-import { AddNodePicker } from './AddNodePicker';
+import { AddNodePicker } from '@/nodes/AddNodePicker';
 
 // n8n-style edge: a bezier connector with a "×" delete button that appears at
 // the midpoint on hover. A wide transparent path gives the thin edge a usable

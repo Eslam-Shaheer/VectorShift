@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useAutoResizeTextarea } from './fields/useAutoResize';
+import { useAutoResizeTextarea } from '@/hooks/useAutoResize';
 
 // Resolves a field's current value from node data, falling back to its default
 // (which may be a function of the node id, e.g. "input_1").

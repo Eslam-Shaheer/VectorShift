@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { Plus } from 'lucide-react';
 import { useStore } from '@/store';
@@ -11,61 +12,78 @@ const POSITION = {
   bottom: Position.Bottom,
 };
 
-// Wraps a ReactFlow Handle with token-driven styling (see index.css), an
-// optional inline label, and — for right-side source handles — an n8n-style
-// "+" quick-add button. `offset` (0..1) places the handle along the node edge.
+// A right-side source handle rendered as an n8n-style "+": the handle IS the
+// button, so it supports BOTH gestures natively —
+//   • drag  → pull a connection to an existing node (ReactFlow connection)
+//   • click → open the picker to spawn a new connected node
+// Laid out in a flex row (label → stub → +); the handle uses position:static so
+// it sits in that row while ReactFlow still reads its real DOM rect for edges.
+function SourcePlusHandle({ nodeId, id, offset, label }) {
+  const [open, setOpen] = useState(false);
+  const addConnectedNode = useStore((s) => s.addConnectedNode);
+  const top = `${offset * 100}%`;
+
+  return (
+    <>
+      {/* stub line from the node edge to the "+" */}
+      <span
+        className="pointer-events-none absolute h-px w-3.5 bg-vs-border-strong"
+        style={{ top, left: '100%', transform: 'translateY(-50%)' }}
+      />
+      {label && (
+        <span
+          className="vs-eyebrow pointer-events-none absolute z-10 whitespace-nowrap text-vs-faint"
+          style={{ top, left: 'calc(100% + 40px)', transform: 'translateY(-50%)', fontSize: '9px', letterSpacing: '0.1em' }}
+        >
+          {label}
+        </span>
+      )}
+      <AddNodePicker
+        open={open}
+        onOpenChange={setOpen}
+        filter={(t) => hasHandle(t, 'target')}
+        onPick={(type) => addConnectedNode({ sourceId: nodeId, sourceHandle: id, type })}
+        anchor={
+          <Handle
+            type="source"
+            position={Position.Right}
+            id={id}
+            title="Drag to connect · click to add a node"
+            className="vs-plus-handle nodrag nopan"
+            style={{ top, right: -34 }}
+            // click (no drag) opens the picker; a real drag makes a connection
+            onClick={() => setOpen(true)}
+          >
+            {/* pointer-events:none so ReactFlow sees the handle (not the icon)
+                as the mousedown target and can start a connection */}
+            <Plus size={12} strokeWidth={2.5} style={{ pointerEvents: 'none' }} />
+          </Handle>
+        }
+      />
+    </>
+  );
+}
+
+// Wraps a ReactFlow Handle with token-driven styling (see index.css) and an
+// optional inline label. Right-side source handles use the "+" affordance above.
 export function NodeHandle({ nodeId, id, kind, position = 'left', offset = 0.5, label }) {
   const side = POSITION[position] ?? Position.Left;
   const vertical = side === Position.Left || side === Position.Right;
-  const style = vertical ? { top: `${offset * 100}%` } : { left: `${offset * 100}%` };
-
-  // A source handle already feeding an edge shouldn't offer another "+".
-  const connected = useStore((s) => s.edges.some((e) => e.sourceHandle === id));
-  const addConnectedNode = useStore((s) => s.addConnectedNode);
   const isSourceRight = kind === 'source' && side === Position.Right;
+
+  if (vertical && isSourceRight) {
+    return <SourcePlusHandle nodeId={nodeId} id={id} offset={offset} label={label} />;
+  }
+
+  const style = vertical ? { top: `${offset * 100}%` } : { left: `${offset * 100}%` };
 
   return (
     <>
       <Handle type={kind} position={side} id={id} style={style} />
 
-      {/* Right-side source handle: label → stub → "+" on one line, just outside
-          the node edge (no overlap with fields or with each other). */}
-      {vertical && isSourceRight && (
-        <div
-          className="absolute z-10 flex items-center gap-1.5"
-          style={{ top: `${offset * 100}%`, left: 'calc(100% + 6px)', transform: 'translateY(-50%)' }}
-        >
-          {label && (
-            <span
-              className="vs-eyebrow pointer-events-none whitespace-nowrap text-vs-faint"
-              style={{ fontSize: '9px', letterSpacing: '0.1em' }}
-            >
-              {label}
-            </span>
-          )}
-          {!connected && (
-            <div className="nodrag nopan flex items-center" style={{ pointerEvents: 'auto' }}>
-              <span className="h-px w-4 bg-vs-border-strong" />
-              <AddNodePicker
-                filter={(t) => hasHandle(t, 'target')}
-                onPick={(type) => addConnectedNode({ sourceId: nodeId, sourceHandle: id, type })}
-                trigger={
-                  <button
-                    aria-label="Add connected node"
-                    className="flex h-5 w-5 items-center justify-center rounded-[4px] border border-vs-border-strong bg-vs-surface text-vs-muted transition-colors hover:border-vs-accent hover:bg-vs-accent-tint hover:text-vs-accent-hover data-[state=open]:border-vs-accent data-[state=open]:bg-vs-accent-tint data-[state=open]:text-vs-accent-hover"
-                  >
-                    <Plus size={12} strokeWidth={2.5} />
-                  </button>
-                }
-              />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Any other labeled handle (e.g. left-side targets): float the label
-          just outside the matching edge (left labels hang off the left edge). */}
-      {vertical && !isSourceRight && label && (
+      {/* Labeled handle (e.g. left-side targets): float the label just outside
+          the matching edge (left labels hang off the left edge). */}
+      {vertical && label && (
         <span
           className="vs-eyebrow pointer-events-none absolute z-10 whitespace-nowrap text-vs-faint"
           style={{

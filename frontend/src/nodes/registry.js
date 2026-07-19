@@ -9,7 +9,7 @@ import {
   Globe,
   StickyNote,
 } from 'lucide-react';
-import { parseVariables } from './text/parseVariables';
+import { parseVariables } from '@/lib/parseVariables';
 
 // ============================================================================
 // Node registry — every node is data. A node is a BaseNode driven by one config
