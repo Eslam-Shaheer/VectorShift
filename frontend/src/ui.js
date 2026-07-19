@@ -5,11 +5,13 @@ import ReactFlow, { Controls, Background, BackgroundVariant } from 'reactflow';
 import { useStore } from './store';
 import { shallow } from 'zustand/shallow';
 import { nodeTypes } from './nodes/nodeTypes';
+import { ButtonEdge } from './nodes/ButtonEdge';
 
 import 'reactflow/dist/style.css';
 
 const gridSize = 20;
 const proOptions = { hideAttribution: true };
+const edgeTypes = { button: ButtonEdge };
 
 const selector = (state) => ({
   nodes: state.nodes,
@@ -79,10 +81,12 @@ export const PipelineUI = () => {
         onDragOver={onDragOver}
         onInit={setReactFlowInstance}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        deleteKeyCode={['Backspace', 'Delete']}
         proOptions={proOptions}
         snapGrid={[gridSize, gridSize]}
-        connectionLineType="smoothstep"
-        defaultEdgeOptions={{ type: 'smoothstep' }}
+        connectionLineType="bezier"
+        defaultEdgeOptions={{ type: 'button' }}
       >
         <Background variant={BackgroundVariant.Dots} gap={gridSize} size={1.5} color="var(--color-vs-canvas-dot)" />
         <Controls showInteractive={false} />

@@ -10,7 +10,7 @@ const buttonVariants = cva(
       variant: {
         // primary: ink fill, cream text — the marquee action
         primary:
-          'bg-vs-ink text-vs-surface hover:bg-vs-ink-deep shadow-[0_1px_2px_rgba(26,24,19,0.12)]',
+          'bg-vs-ink text-vs-surface hover:bg-vs-ink-deep shadow-btn',
         secondary:
           'bg-vs-surface text-vs-ink border border-vs-border-strong hover:bg-vs-surface-sunk',
         ghost: 'text-vs-body hover:bg-vs-surface-sunk hover:text-vs-ink',

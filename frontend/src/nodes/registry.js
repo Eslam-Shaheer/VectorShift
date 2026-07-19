@@ -1,3 +1,14 @@
+import {
+  LogIn,
+  LogOut,
+  Bot,
+  Type,
+  Filter as FilterIcon,
+  Shuffle,
+  GitBranch,
+  Globe,
+  StickyNote,
+} from 'lucide-react';
 import { parseVariables } from './text/parseVariables';
 
 // ============================================================================
@@ -27,6 +38,7 @@ export const nodeRegistry = {
     type: 'customInput',
     label: 'Input',
     category: 'INPUTS',
+    icon: LogIn,
     handles: [{ id: 'value', kind: 'source', position: 'right' }],
     fields: [
       {
@@ -50,6 +62,7 @@ export const nodeRegistry = {
     type: 'customOutput',
     label: 'Output',
     category: 'OUTPUTS',
+    icon: LogOut,
     handles: [{ id: 'value', kind: 'target', position: 'left' }],
     fields: [
       {
@@ -73,6 +86,7 @@ export const nodeRegistry = {
     type: 'llm',
     label: 'LLM',
     category: 'MODELS',
+    icon: Bot,
     handles: [
       { id: 'system', kind: 'target', position: 'left', label: 'system' },
       { id: 'prompt', kind: 'target', position: 'left', label: 'prompt' },
@@ -99,6 +113,7 @@ export const nodeRegistry = {
     type: 'text',
     label: 'Text',
     category: 'TEXT',
+    icon: Type,
     handles: [{ id: 'output', kind: 'source', position: 'right' }],
     fields: [
       {
@@ -131,6 +146,7 @@ export const nodeRegistry = {
     type: 'filter',
     label: 'Filter',
     category: 'LOGIC',
+    icon: FilterIcon,
     handles: [
       { id: 'in', kind: 'target', position: 'left' },
       { id: 'out', kind: 'source', position: 'right' },
@@ -149,6 +165,7 @@ export const nodeRegistry = {
     type: 'transform',
     label: 'Transform',
     category: 'LOGIC',
+    icon: Shuffle,
     handles: [
       { id: 'a', kind: 'target', position: 'left', label: 'a' },
       { id: 'b', kind: 'target', position: 'left', label: 'b' },
@@ -174,6 +191,7 @@ export const nodeRegistry = {
     type: 'conditional',
     label: 'Conditional',
     category: 'LOGIC',
+    icon: GitBranch,
     handles: [
       { id: 'in', kind: 'target', position: 'left' },
       { id: 'true', kind: 'source', position: 'right', label: 'true' },
@@ -189,6 +207,7 @@ export const nodeRegistry = {
     type: 'apiRequest',
     label: 'API Request',
     category: 'INTEGRATIONS',
+    icon: Globe,
     width: 260,
     handles: [
       { id: 'in', kind: 'target', position: 'left' },
@@ -211,6 +230,7 @@ export const nodeRegistry = {
     type: 'note',
     label: 'Note',
     category: 'NOTES',
+    icon: StickyNote,
     width: 220,
     handles: [],
     fields: [
