@@ -23,43 +23,64 @@ const POSITION = {
 function SourcePlusHandle({ nodeId, id, offset, label }) {
   const [open, setOpen] = useState(false);
   const addConnectedNode = useStore((s) => s.addConnectedNode);
+  const startLinking = useStore((s) => s.startLinking);
+  const moveLinking = useStore((s) => s.moveLinking);
+  const finishLinking = useStore((s) => s.finishLinking);
+  const onConnect = useStore((s) => s.onConnect);
+  const isValidConnection = useStore((s) => s.isValidConnection);
   const connected = useStore((s) => s.edges.some((e) => e.sourceHandle === id));
   const top = `${offset * 100}%`;
   const draggedRef = useRef(false);
 
-  // Turn a press-drag on the "+" into a connection drag from the point handle by
-  // replaying pointerdown on it once the pointer moves past a small threshold.
-  const onPlusPointerDown = (e) => {
+  // Drag the "+" → draw the line FROM the point (LinkingOverlay) and connect via
+  // hit-test on drop. Fully manual so the origin is always the point, never the
+  // "+", and edges stay anchored at the single point handle.
+  const onPlusMouseDown = (e) => {
     if (e.button !== 0) return;
+    e.preventDefault();
     draggedRef.current = false;
-    const startX = e.clientX;
-    const startY = e.clientY;
     const node = e.currentTarget.closest('.react-flow__node');
     const point = node?.querySelector(`.vs-out-point[data-handleid="${id}"]`);
+    const r = point?.getBoundingClientRect();
+    const fromX = r ? r.left + r.width / 2 : e.clientX;
+    const fromY = r ? r.top + r.height / 2 : e.clientY;
+    const sx = e.clientX;
+    const sy = e.clientY;
+    let started = false;
 
     const move = (ev) => {
-      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) <= 4) return;
-      draggedRef.current = true;
+      if (!started) {
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) <= 4) return;
+        started = true;
+        draggedRef.current = true;
+        startLinking({ sourceId: nodeId, sourceHandle: id, fromX, fromY, toX: ev.clientX, toY: ev.clientY });
+      } else {
+        moveLinking(ev.clientX, ev.clientY);
+      }
+    };
+    const up = (ev) => {
       cleanup();
-      // Start the connection FROM the point handle (ReactFlow v11 listens on
-      // mousedown) so the line originates at the point, not the "+".
-      point?.dispatchEvent(
-        new MouseEvent('mousedown', {
-          bubbles: true,
-          cancelable: true,
-          button: 0,
-          buttons: 1,
-          clientX: startX,
-          clientY: startY,
-        })
-      );
+      if (!started) return;
+      finishLinking();
+      // Resolve a target handle under the cursor.
+      const el = document.elementFromPoint(ev.clientX, ev.clientY);
+      const handleEl = el?.closest('.react-flow__handle-left');
+      const targetNodeEl = (handleEl ?? el)?.closest('.react-flow__node');
+      if (!targetNodeEl) return;
+      const target = targetNodeEl.getAttribute('data-id');
+      const targetHandle =
+        handleEl?.getAttribute('data-handleid') ??
+        targetNodeEl.querySelector('.react-flow__handle-left')?.getAttribute('data-handleid');
+      if (!target || !targetHandle) return;
+      const conn = { source: nodeId, sourceHandle: id, target, targetHandle };
+      if (isValidConnection(conn)) onConnect(conn);
     };
     const cleanup = () => {
-      window.removeEventListener('pointermove', move);
-      window.removeEventListener('pointerup', cleanup);
+      window.removeEventListener('mousemove', move);
+      window.removeEventListener('mouseup', up);
     };
-    window.addEventListener('pointermove', move);
-    window.addEventListener('pointerup', cleanup);
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
   };
 
   return (
@@ -101,7 +122,7 @@ function SourcePlusHandle({ nodeId, id, offset, label }) {
                   aria-label="Add connected node"
                   draggable={false}
                   onDragStart={(e) => e.preventDefault()}
-                  onPointerDown={onPlusPointerDown}
+                  onMouseDown={onPlusMouseDown}
                   onClick={() => {
                     if (draggedRef.current) return; // a drag, not a click
                     setOpen(true);

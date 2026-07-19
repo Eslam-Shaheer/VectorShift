@@ -16,6 +16,7 @@ import { ButtonEdge } from './ButtonEdge';
 import { NodeContextMenu, PaneContextMenu } from './ContextMenu';
 import { ConnectionDropMenu } from './ConnectionDropMenu';
 import { ConnectionLine } from './ConnectionLine';
+import { LinkingOverlay } from './LinkingOverlay';
 
 import 'reactflow/dist/style.css';
 
@@ -230,6 +231,7 @@ export const Canvas = () => {
         ))}
 
       {drop && <ConnectionDropMenu drop={drop} onClose={() => setDrop(null)} />}
+      <LinkingOverlay />
     </div>
   );
 };

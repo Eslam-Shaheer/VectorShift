@@ -166,6 +166,16 @@ export const useStore = create(
           set({ nodes: [...get().nodes, ...created] });
         },
 
+        // Transient "+" drag state (screen coords) — drives the LinkingOverlay so
+        // the line always originates at the point, even when grabbed by the "+".
+        linking: null,
+        startLinking: (payload) => set({ linking: payload }),
+        moveLinking: (toX, toY) => {
+          const l = get().linking;
+          if (l) set({ linking: { ...l, toX, toY } });
+        },
+        finishLinking: () => set({ linking: null }),
+
         removeNode: (id) => {
           snapshot();
           set({
