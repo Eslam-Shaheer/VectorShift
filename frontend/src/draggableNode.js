@@ -1,35 +1,23 @@
-// draggableNode.js
+// draggableNode.js — a palette chip the user drags onto the canvas.
 
 export const DraggableNode = ({ type, label }) => {
   const onDragStart = (event, nodeType) => {
-    const appData = { nodeType };
-    event.target.style.cursor = "grabbing";
     event.dataTransfer.setData(
-      "application/reactflow",
-      JSON.stringify(appData),
+      'application/reactflow',
+      JSON.stringify({ nodeType })
     );
-    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.effectAllowed = 'move';
+    event.currentTarget.style.cursor = 'grabbing';
   };
 
   return (
     <div
-      className={type}
+      className="flex cursor-grab select-none items-center rounded-[4px] border border-vs-border-strong bg-vs-surface px-3 py-2 text-[13px] font-medium text-vs-ink shadow-sm transition-colors hover:border-vs-accent hover:bg-vs-accent-tint"
       onDragStart={(event) => onDragStart(event, type)}
-      onDragEnd={(event) => (event.target.style.cursor = "grab")}
-      style={{
-        cursor: "grab",
-        minWidth: "80px",
-        height: "60px",
-        display: "flex",
-        alignItems: "center",
-        borderRadius: "8px",
-        backgroundColor: "#1C2536",
-        justifyContent: "center",
-        flexDirection: "column",
-      }}
+      onDragEnd={(event) => (event.currentTarget.style.cursor = 'grab')}
       draggable
     >
-      <span style={{ color: "#fff" }}>{label}</span>
+      {label}
     </div>
   );
 };

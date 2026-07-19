@@ -1,13 +1,185 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@import 'tailwindcss';
+
+/* ============================================================================
+   VectorShift Builder — design tokens
+   Warm editorial / institutional-finance identity: cream "paper", near-black
+   ink, a single antique-gold accent. Tokens live in @theme so Tailwind emits
+   matching utilities (bg-vs-surface, text-vs-muted, …) and they double as raw
+   CSS vars for ReactFlow-native styling below.
+   ========================================================================== */
+@theme {
+  /* palette */
+  --color-vs-surface: #fbf8f1;
+  --color-vs-surface-sunk: #efeadf;
+  --color-vs-ink-deep: #0e0c09;
+  --color-vs-ink: #1a1813;
+  --color-vs-body: #3a362e;
+  --color-vs-muted: #726a5a;
+  --color-vs-faint: #a69c88;
+  --color-vs-accent: #9c7a3e;
+  --color-vs-accent-hover: #86672f;
+  --color-vs-accent-tint: #ede4ce;
+  --color-vs-border: #e4decf;
+  --color-vs-border-strong: #d4ccb8;
+  --color-vs-canvas-dot: #ded7c4;
+  --color-vs-handle: #c6bda6;
+  --color-vs-danger: #b0402e;
+
+  /* shadcn/ui semantic aliases → tokens */
+  --color-background: #fbf8f1;
+  --color-foreground: #1a1813;
+  --color-card: #fbf8f1;
+  --color-card-foreground: #1a1813;
+  --color-popover: #fbf8f1;
+  --color-popover-foreground: #1a1813;
+  --color-primary: #1a1813;
+  --color-primary-foreground: #fbf8f1;
+  --color-secondary: #efeadf;
+  --color-secondary-foreground: #1a1813;
+  --color-muted: #efeadf;
+  --color-muted-foreground: #726a5a;
+  --color-accent: #ede4ce;
+  --color-accent-foreground: #1a1813;
+  --color-destructive: #b0402e;
+  --color-destructive-foreground: #fbf8f1;
+  --color-border: #e4decf;
+  --color-input: #e4decf;
+  --color-ring: #9c7a3e;
+
+  /* type roles */
+  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-serif: 'Playfair Display', Georgia, serif;
+
+  /* radii + node shadow */
+  --radius: 4px;
+  --radius-node: 8px;
+  --shadow-node: 0 1px 2px rgba(26, 24, 19, 0.05), 0 6px 20px rgba(26, 24, 19, 0.06);
+  --shadow-node-hover: 0 1px 2px rgba(26, 24, 19, 0.06), 0 10px 30px rgba(26, 24, 19, 0.1);
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    margin: 0;
+    background: var(--color-vs-surface);
+    color: var(--color-vs-body);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ============================================================================
+   Signature primitives — used SPARINGLY.
+   ========================================================================== */
+@layer components {
+  .vs-eyebrow {
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--color-vs-muted);
+  }
+  .vs-em {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 500;
+  }
+  .vs-index {
+    font-family: var(--font-mono);
+    color: var(--color-vs-accent);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+}
+
+/* ============================================================================
+   ReactFlow-native styling (canvas, handles, edges, controls) — driven from
+   tokens directly, not shadcn.
+   ========================================================================== */
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: var(--color-vs-handle);
+  border: 1.5px solid var(--color-vs-border-strong);
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+}
+.react-flow__handle:hover,
+.react-flow__handle.connectionindicator:hover,
+.react-flow__handle-connecting,
+.react-flow__handle-valid {
+  background: var(--color-vs-accent);
+  border-color: var(--color-vs-accent);
+}
+.react-flow__handle.connected {
+  background: var(--color-vs-accent);
+  border-color: var(--color-vs-accent);
+}
+
+.react-flow__edge-path {
+  stroke: var(--color-vs-border-strong);
+  stroke-width: 1.5;
+}
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--color-vs-accent);
+}
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke: var(--color-vs-accent);
+}
+.react-flow__arrowhead {
+  fill: var(--color-vs-border-strong);
+}
+
+/* Controls: flat, hairline, ink icons */
+.react-flow__controls {
+  box-shadow: var(--shadow-node);
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--color-vs-border);
+}
+.react-flow__controls-button {
+  background: var(--color-vs-surface);
+  border-bottom: 1px solid var(--color-vs-border);
+  width: 26px;
+  height: 26px;
+}
+.react-flow__controls-button:hover {
+  background: var(--color-vs-surface-sunk);
+}
+.react-flow__controls-button svg {
+  fill: var(--color-vs-ink);
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+/* Toast entrance (kept in CSS rather than pulling in tailwindcss-animate) */
+[data-radix-toast-viewport] > li[data-state='open'] {
+  animation: vs-toast-in 0.18s ease-out;
+}
+[data-radix-toast-viewport] > li[data-state='closed'] {
+  animation: vs-toast-out 0.15s ease-in forwards;
+}
+@keyframes vs-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes vs-toast-out {
+  to {
+    opacity: 0;
+    transform: translateX(12px);
+  }
 }
