@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath } from 'reactflow';
+import { BaseEdge, EdgeLabelRenderer, getBezierPath } from 'reactflow';
 import { X, Plus } from 'lucide-react';
 import { useStore } from '@/store';
 import { hasHandle } from '@/lib/graph';
 import { AddNodePicker } from '@/nodes/AddNodePicker';
 
-// n8n-style edge: an orthogonal (smoothstep) connector with rounded corners and
-// a "×" delete + "+" insert button that appear at the midpoint on hover. A wide
-// transparent path gives the thin edge a usable hover target.
+// n8n-style edge: a bezier connector with a "×" delete + "+" insert button that
+// appear at the midpoint on hover. A wide transparent path gives the thin edge a
+// usable hover target.
 export function ButtonEdge({
   id,
   sourceX,
@@ -25,14 +25,13 @@ export function ButtonEdge({
   const insertNodeOnEdge = useStore((s) => s.insertNodeOnEdge);
   const showButtons = hovered || menuOpen;
 
-  const [edgePath, labelX, labelY] = getSmoothStepPath({
+  const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
     targetPosition,
-    borderRadius: 12,
   });
 
   return (
