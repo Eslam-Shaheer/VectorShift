@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath } from 'reactflow';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { useStore } from '@/store';
+import { hasHandle } from '@/lib/graph';
+import { AddNodePicker } from './AddNodePicker';
 
 // n8n-style edge: a bezier connector with a "×" delete button that appears at
 // the midpoint on hover. A wide transparent path gives the thin edge a usable
@@ -18,7 +20,10 @@ export function ButtonEdge({
   style,
 }) {
   const [hovered, setHovered] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const removeEdge = useStore((s) => s.removeEdge);
+  const insertNodeOnEdge = useStore((s) => s.insertNodeOnEdge);
+  const showButtons = hovered || menuOpen;
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -36,19 +41,38 @@ export function ButtonEdge({
       <path d={edgePath} fill="none" stroke="transparent" strokeWidth={20} />
 
       <EdgeLabelRenderer>
-        {hovered && (
-          <button
-            aria-label="Delete connection"
-            className="nodrag nopan absolute flex h-5 w-5 items-center justify-center rounded-full border border-vs-border-strong bg-vs-surface text-vs-muted shadow-(--shadow-btn) transition-colors hover:border-vs-danger hover:bg-vs-danger hover:text-vs-surface"
+        {showButtons && (
+          <div
+            className="nodrag nopan absolute flex items-center gap-1"
             style={{
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
               pointerEvents: 'all',
             }}
             onMouseEnter={() => setHovered(true)}
-            onClick={() => removeEdge(id)}
+            onMouseLeave={() => setHovered(false)}
           >
-            <X size={11} strokeWidth={2.5} />
-          </button>
+            {/* Insert a node onto this edge (splits it in two) */}
+            <AddNodePicker
+              filter={(t) => hasHandle(t, 'target') && hasHandle(t, 'source')}
+              onOpenChange={setMenuOpen}
+              onPick={(type) => insertNodeOnEdge({ edgeId: id, type })}
+              trigger={
+                <button
+                  aria-label="Insert node on connection"
+                  className="flex h-5 w-5 items-center justify-center rounded-full border border-vs-border-strong bg-vs-surface text-vs-muted shadow-(--shadow-btn) transition-colors hover:border-vs-accent hover:bg-vs-accent hover:text-vs-surface"
+                >
+                  <Plus size={11} strokeWidth={2.5} />
+                </button>
+              }
+            />
+            <button
+              aria-label="Delete connection"
+              className="flex h-5 w-5 items-center justify-center rounded-full border border-vs-border-strong bg-vs-surface text-vs-muted shadow-(--shadow-btn) transition-colors hover:border-vs-danger hover:bg-vs-danger hover:text-vs-surface"
+              onClick={() => removeEdge(id)}
+            >
+              <X size={11} strokeWidth={2.5} />
+            </button>
+          </div>
         )}
       </EdgeLabelRenderer>
     </g>

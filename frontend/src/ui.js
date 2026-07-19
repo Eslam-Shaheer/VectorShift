@@ -1,11 +1,19 @@
 // ui.js — the pipeline canvas (ReactFlow), styled from tokens.
 
-import { useState, useRef, useCallback } from 'react';
-import ReactFlow, { Controls, Background, BackgroundVariant } from 'reactflow';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import ReactFlow, {
+  Controls,
+  Background,
+  BackgroundVariant,
+  MiniMap,
+  Panel,
+} from 'reactflow';
+import { Undo2, Redo2, LayoutGrid, Trash } from 'lucide-react';
 import { useStore } from './store';
 import { shallow } from 'zustand/shallow';
 import { nodeTypes } from './nodes/nodeTypes';
 import { ButtonEdge } from './nodes/ButtonEdge';
+import { NodeContextMenu, PaneContextMenu } from './nodes/ContextMenu';
 
 import 'reactflow/dist/style.css';
 
@@ -21,6 +29,16 @@ const selector = (state) => ({
   onNodesChange: state.onNodesChange,
   onEdgesChange: state.onEdgesChange,
   onConnect: state.onConnect,
+  isValidConnection: state.isValidConnection,
+  undo: state.undo,
+  redo: state.redo,
+  copySelected: state.copySelected,
+  paste: state.paste,
+  duplicateNode: state.duplicateNode,
+  autoLayout: state.autoLayout,
+  clear: state.clear,
+  canUndo: state.past.length > 0,
+  canRedo: state.future.length > 0,
 });
 
 function EmptyState() {
@@ -34,11 +52,15 @@ function EmptyState() {
   );
 }
 
+const isTypingTarget = (el) =>
+  el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+
 export const PipelineUI = () => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
-  const { nodes, edges, getNodeID, addNode, onNodesChange, onEdgesChange, onConnect } =
-    useStore(selector, shallow);
+  const [menu, setMenu] = useState(null); // { x, y, nodeId? }
+  const store = useStore(selector, shallow);
+  const { nodes, edges } = store;
 
   const getInitNodeData = (nodeID, type) => ({ id: nodeID, nodeType: `${type}` });
 
@@ -49,18 +71,17 @@ export const PipelineUI = () => {
       if (event?.dataTransfer?.getData('application/reactflow')) {
         const appData = JSON.parse(event.dataTransfer.getData('application/reactflow'));
         const type = appData?.nodeType;
-        if (typeof type === 'undefined' || !type) return;
+        if (!type) return;
 
         const position = reactFlowInstance.project({
           x: event.clientX - reactFlowBounds.left,
           y: event.clientY - reactFlowBounds.top,
         });
-
-        const nodeID = getNodeID(type);
-        addNode({ id: nodeID, type, position, data: getInitNodeData(nodeID, type) });
+        const nodeID = store.getNodeID(type);
+        store.addNode({ id: nodeID, type, position, data: getInitNodeData(nodeID, type) });
       }
     },
-    [reactFlowInstance, addNode, getNodeID]
+    [reactFlowInstance, store]
   );
 
   const onDragOver = useCallback((event) => {
@@ -68,18 +89,60 @@ export const PipelineUI = () => {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
+  // Keyboard shortcuts — inert while typing in a field.
+  useEffect(() => {
+    const onKey = (e) => {
+      if (isTypingTarget(e.target)) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (!mod) return;
+      const key = e.key.toLowerCase();
+      if (key === 'z') {
+        e.preventDefault();
+        e.shiftKey ? store.redo() : store.undo();
+      } else if (key === 'y') {
+        e.preventDefault();
+        store.redo();
+      } else if (key === 'c') {
+        store.copySelected();
+      } else if (key === 'v') {
+        store.paste();
+      } else if (key === 'd') {
+        e.preventDefault();
+        nodes.filter((n) => n.selected).forEach((n) => store.duplicateNode(n.id));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [store, nodes]);
+
+  const closeMenu = useCallback(() => setMenu(null), []);
+
   return (
     <div ref={reactFlowWrapper} className="relative h-full w-full">
       {nodes.length === 0 && <EmptyState />}
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
+        onNodesChange={store.onNodesChange}
+        onEdgesChange={store.onEdgesChange}
+        onConnect={store.onConnect}
+        isValidConnection={store.isValidConnection}
         onDrop={onDrop}
         onDragOver={onDragOver}
-        onInit={setReactFlowInstance}
+        onInit={(inst) => {
+          setReactFlowInstance(inst);
+          setTimeout(() => inst.fitView({ padding: 0.25, duration: 300 }), 0);
+        }}
+        onNodeContextMenu={(e, node) => {
+          e.preventDefault();
+          setMenu({ x: e.clientX, y: e.clientY, nodeId: node.id });
+        }}
+        onPaneContextMenu={(e) => {
+          e.preventDefault();
+          setMenu({ x: e.clientX, y: e.clientY });
+        }}
+        onPaneClick={closeMenu}
+        onMoveStart={closeMenu}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         deleteKeyCode={['Backspace', 'Delete']}
@@ -90,7 +153,57 @@ export const PipelineUI = () => {
       >
         <Background variant={BackgroundVariant.Dots} gap={gridSize} size={1.5} color="var(--color-vs-canvas-dot)" />
         <Controls showInteractive={false} />
+        <MiniMap
+          pannable
+          zoomable
+          className="!bg-vs-surface-sunk"
+          maskColor="transparent"
+          nodeColor="var(--color-vs-handle)"
+          nodeStrokeColor="var(--color-vs-border-strong)"
+        />
+
+        <Panel position="top-right" className="flex gap-1">
+          <PanelButton title="Undo (⌘Z)" onClick={store.undo} disabled={!store.canUndo}>
+            <Undo2 size={15} />
+          </PanelButton>
+          <PanelButton title="Redo (⌘⇧Z)" onClick={store.redo} disabled={!store.canRedo}>
+            <Redo2 size={15} />
+          </PanelButton>
+          <PanelButton
+            title="Auto-layout"
+            onClick={() => {
+              store.autoLayout();
+              setTimeout(() => reactFlowInstance?.fitView({ padding: 0.25, duration: 300 }), 60);
+            }}
+            disabled={!nodes.length}
+          >
+            <LayoutGrid size={15} />
+          </PanelButton>
+          <PanelButton title="Clear canvas" onClick={store.clear} disabled={!nodes.length}>
+            <Trash size={15} />
+          </PanelButton>
+        </Panel>
       </ReactFlow>
+
+      {menu &&
+        (menu.nodeId ? (
+          <NodeContextMenu {...menu} onClose={closeMenu} />
+        ) : (
+          <PaneContextMenu {...menu} onClose={closeMenu} />
+        ))}
     </div>
   );
 };
+
+function PanelButton({ title, onClick, disabled, children }) {
+  return (
+    <button
+      title={title}
+      onClick={onClick}
+      disabled={disabled}
+      className="flex h-8 w-8 items-center justify-center rounded-[4px] border border-vs-border bg-vs-surface text-vs-body shadow-(--shadow-btn) transition-colors hover:bg-vs-surface-sunk hover:text-vs-ink disabled:opacity-40 disabled:hover:bg-vs-surface"
+    >
+      {children}
+    </button>
+  );
+}

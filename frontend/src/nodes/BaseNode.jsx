@@ -36,6 +36,13 @@ export function BaseNode({ id, data, selected, config }) {
   const removeNode = useStore((s) => s.removeNode);
   const Icon = config.icon;
 
+  // A required field left empty flags the node as incomplete (subtle amber dot).
+  const incomplete = (config.fields ?? []).some((f) => {
+    if (!f.required) return false;
+    const v = data?.[f.key] ?? (typeof f.default === 'function' ? f.default(id) : f.default);
+    return v === undefined || v === '';
+  });
+
   return (
     <div
       className={cn(
@@ -68,6 +75,12 @@ export function BaseNode({ id, data, selected, config }) {
           </h3>
           <span className="vs-eyebrow">{config.category}</span>
         </div>
+        {incomplete && (
+          <span
+            title="Required field is empty"
+            className="ml-auto h-2 w-2 shrink-0 rounded-full bg-vs-warn"
+          />
+        )}
       </header>
 
       {config.fields?.length > 0 && (

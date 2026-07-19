@@ -24,6 +24,7 @@
   --color-vs-canvas-dot: #ded7c4;
   --color-vs-handle: #c6bda6;
   --color-vs-danger: #b0402e;
+  --color-vs-warn: #c0892c;
 
   /* shadcn/ui semantic aliases → tokens */
   --color-background: #fbf8f1;
@@ -167,6 +168,18 @@
 
 .react-flow__attribution {
   display: none;
+}
+
+/* MiniMap: hairline, token-driven */
+.react-flow__minimap {
+  border: 1px solid var(--color-vs-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-node);
+}
+.react-flow__minimap-mask {
+  fill: var(--color-vs-surface-sunk);
+  fill-opacity: 0.55;
 }
 
 /* Toast entrance (kept in CSS rather than pulling in tailwindcss-animate) */

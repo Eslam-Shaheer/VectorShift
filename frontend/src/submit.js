@@ -75,8 +75,15 @@ export const SubmitButton = () => {
     }
   };
 
+  const empty = nodes.length === 0;
+
   return (
-    <Button onClick={handleSubmit} disabled={loading} className="gap-1.5">
+    <Button
+      onClick={handleSubmit}
+      disabled={loading || empty}
+      title={empty ? 'Add nodes to the canvas first' : undefined}
+      className="gap-1.5"
+    >
       {loading ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />

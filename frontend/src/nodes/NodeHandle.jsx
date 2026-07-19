@@ -1,5 +1,7 @@
 import { Handle, Position } from 'reactflow';
+import { Plus } from 'lucide-react';
 import { useStore } from '@/store';
+import { hasHandle } from '@/lib/graph';
 import { AddNodePicker } from './AddNodePicker';
 
 const POSITION = {
@@ -19,6 +21,7 @@ export function NodeHandle({ nodeId, id, kind, position = 'left', offset = 0.5, 
 
   // A source handle already feeding an edge shouldn't offer another "+".
   const connected = useStore((s) => s.edges.some((e) => e.sourceHandle === id));
+  const addConnectedNode = useStore((s) => s.addConnectedNode);
   const isSourceRight = kind === 'source' && side === Position.Right;
 
   return (
@@ -40,7 +43,23 @@ export function NodeHandle({ nodeId, id, kind, position = 'left', offset = 0.5, 
               {label}
             </span>
           )}
-          {!connected && <AddNodePicker nodeId={nodeId} sourceHandle={id} />}
+          {!connected && (
+            <div className="nodrag nopan flex items-center" style={{ pointerEvents: 'auto' }}>
+              <span className="h-px w-4 bg-vs-border-strong" />
+              <AddNodePicker
+                filter={(t) => hasHandle(t, 'target')}
+                onPick={(type) => addConnectedNode({ sourceId: nodeId, sourceHandle: id, type })}
+                trigger={
+                  <button
+                    aria-label="Add connected node"
+                    className="flex h-5 w-5 items-center justify-center rounded-[4px] border border-vs-border-strong bg-vs-surface text-vs-muted transition-colors hover:border-vs-accent hover:bg-vs-accent-tint hover:text-vs-accent-hover data-[state=open]:border-vs-accent data-[state=open]:bg-vs-accent-tint data-[state=open]:text-vs-accent-hover"
+                  >
+                    <Plus size={12} strokeWidth={2.5} />
+                  </button>
+                }
+              />
+            </div>
+          )}
         </div>
       )}
 

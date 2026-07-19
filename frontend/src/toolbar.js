@@ -16,7 +16,12 @@ export const PipelineToolbar = () => {
           <span className="vs-eyebrow">{group.category}</span>
           <div className="flex flex-col gap-1.5">
             {group.types.map((type) => (
-              <DraggableNode key={type} type={type} label={nodeRegistry[type].label} />
+              <DraggableNode
+                key={type}
+                type={type}
+                label={nodeRegistry[type].label}
+                icon={nodeRegistry[type].icon}
+              />
             ))}
           </div>
         </div>

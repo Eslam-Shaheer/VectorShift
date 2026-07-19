@@ -214,7 +214,7 @@ export const nodeRegistry = {
       { id: 'out', kind: 'source', position: 'right' },
     ],
     fields: [
-      { key: 'url', label: 'URL', kind: 'text', placeholder: 'https://api.example.com' },
+      { key: 'url', label: 'URL', kind: 'text', required: true, placeholder: 'https://api.example.com' },
       {
         key: 'method',
         label: 'Method',
