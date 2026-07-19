@@ -9,10 +9,12 @@ from pydantic import BaseModel
 app = FastAPI(title="VectorShift Builder API")
 
 # The frontend runs on a separate origin (Vite dev server), so allow it to call us.
+# Origin is pinned (no wildcard) and credentials are disabled — the browser will
+# not honor a "*" origin together with credentials, and this app needs neither.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten to the deployed frontend origin in production
-    allow_credentials=True,
+    allow_origins=["http://localhost:3000"],  # deployed frontend origin in production
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

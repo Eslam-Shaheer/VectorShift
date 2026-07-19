@@ -14,6 +14,8 @@ import { shallow } from 'zustand/shallow';
 import { nodeTypes } from '@/nodes/nodeTypes';
 import { ButtonEdge } from './ButtonEdge';
 import { NodeContextMenu, PaneContextMenu } from './ContextMenu';
+import { ConnectionDropMenu } from './ConnectionDropMenu';
+import { ConnectionLine } from './ConnectionLine';
 
 import 'reactflow/dist/style.css';
 
@@ -59,8 +61,41 @@ export const Canvas = () => {
   const reactFlowWrapper = useRef(null);
   const [reactFlowInstance, setReactFlowInstance] = useState(null);
   const [menu, setMenu] = useState(null); // { x, y, nodeId? }
+  const [drop, setDrop] = useState(null); // pending "+"-drag drop on empty pane
+  const connectingFrom = useRef(null); // { nodeId, handleId } during a "+" drag
   const store = useStore(selector, shallow);
   const { nodes, edges } = store;
+
+  // Track which source handle a connection drag started from.
+  const onConnectStart = useCallback((_e, { nodeId, handleId }) => {
+    connectingFrom.current = { nodeId, handleId };
+  }, []);
+
+  // If the drag ends on empty canvas (not a node/handle), open the picker at the
+  // drop point to create a node already wired to the source — n8n behavior.
+  const onConnectEnd = useCallback(
+    (event) => {
+      const from = connectingFrom.current;
+      connectingFrom.current = null;
+      if (!from) return;
+      const droppedOnPane = event.target?.classList?.contains('react-flow__pane');
+      if (!droppedOnPane) return; // landed on a node/handle → normal onConnect
+
+      const bounds = reactFlowWrapper.current.getBoundingClientRect();
+      const flowPosition = reactFlowInstance.project({
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      });
+      setDrop({
+        x: event.clientX,
+        y: event.clientY,
+        flowPosition,
+        sourceId: from.nodeId,
+        sourceHandle: from.handleId,
+      });
+    },
+    [reactFlowInstance]
+  );
 
   const getInitNodeData = (nodeID, type) => ({ id: nodeID, nodeType: `${type}` });
 
@@ -126,6 +161,8 @@ export const Canvas = () => {
         onNodesChange={store.onNodesChange}
         onEdgesChange={store.onEdgesChange}
         onConnect={store.onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         isValidConnection={store.isValidConnection}
         onDrop={onDrop}
         onDragOver={onDragOver}
@@ -148,7 +185,7 @@ export const Canvas = () => {
         deleteKeyCode={['Backspace', 'Delete']}
         proOptions={proOptions}
         snapGrid={[gridSize, gridSize]}
-        connectionLineType="bezier"
+        connectionLineComponent={ConnectionLine}
         defaultEdgeOptions={{ type: 'button' }}
       >
         <Background variant={BackgroundVariant.Dots} gap={gridSize} size={1.5} color="var(--color-vs-canvas-dot)" />
@@ -191,6 +228,8 @@ export const Canvas = () => {
         ) : (
           <PaneContextMenu {...menu} onClose={closeMenu} />
         ))}
+
+      {drop && <ConnectionDropMenu drop={drop} onClose={() => setDrop(null)} />}
     </div>
   );
 };

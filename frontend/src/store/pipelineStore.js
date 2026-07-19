@@ -55,7 +55,10 @@ export const useStore = create(
 
         // "+" quick-add: new node to the right of `sourceId`, wired to its first
         // target handle.
-        addConnectedNode: ({ sourceId, sourceHandle, type }) => {
+        // Add a node wired to `sourceHandle`. `position` (flow coords) places it
+        // exactly — used when the user drags the "+" and drops on empty canvas
+        // (n8n style); omit it and the node lands to the right of the source.
+        addConnectedNode: ({ sourceId, sourceHandle, type, position }) => {
           const state = get();
           const source = state.nodes.find((n) => n.id === sourceId);
           if (!nodeRegistry[type]) return;
@@ -63,11 +66,11 @@ export const useStore = create(
           snapshot();
           const newId = state.getNodeID(type);
           const width = source?.width ?? nodeRegistry[source?.type]?.width ?? 260;
-          const position = {
+          const pos = position ?? {
             x: (source?.position?.x ?? 0) + width + 120,
             y: source?.position?.y ?? 0,
           };
-          const newNode = { id: newId, type, position, data: { id: newId, nodeType: type } };
+          const newNode = { id: newId, type, position: pos, data: { id: newId, nodeType: type } };
           set({ nodes: [...get().nodes, newNode] });
 
           const target = firstHandle(type, 'target');

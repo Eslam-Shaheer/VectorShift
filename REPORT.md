@@ -9,6 +9,19 @@ verified, and what would change for production.
 
 ---
 
+## Parts at a glance
+
+| Assessment part | Where it's implemented | Status |
+| --- | --- | --- |
+| Part 1 — Node abstraction | §3 (`nodes/BaseNode.jsx`, `nodes/registry.js`) | ✓ |
+| Part 2 — Styling | §4 (`index.css` tokens, `components/**`) | ✓ |
+| Part 3 — Text node logic | §5 (`hooks/useAutoResize.js`, `lib/parseVariables.js`) | ✓ |
+| Part 4 — Backend integration | §6 (`src/submit.js`, `backend/main.py`) | ✓ |
+
+Tests: `cd backend && pytest` (DAG endpoint) · `cd frontend && npm test` (variable parser).
+
+---
+
 ## 1. Build tooling — Create React App → Vite
 
 **Decision:** migrate the provided CRA project to Vite as step zero.
@@ -211,14 +224,20 @@ was deliberately upgraded to an on-brand toast to satisfy "user-friendly manner"
 
 - Pydantic models for the request (`{nodes:[{id}], edges:[{source,target}]}`).
 - `POST /pipelines/parse` returns `{num_nodes:int, num_edges:int, is_dag:bool}`.
+- **Counts reflect the payload as received:** `num_nodes == len(nodes)` and
+  `num_edges == len(edges)`. Dangling edges (referencing an unknown node id) are
+  still counted in `num_edges` but are skipped during traversal, so `is_dag`
+  stays correct on a partially-built or dirty graph.
 - **DAG detection via Kahn's algorithm** (topological sort): build in-degree map,
   queue zero-in-degree nodes, peel them off; if every node is visited there is no
-  cycle. Edges referencing unknown nodes are ignored; an empty graph is trivially
-  a DAG.
-- CORS middleware added so the Vite dev origin can call it.
+  cycle. A self-loop (`A→A`) gives node A in-degree 1 with nothing to seed the
+  queue, so it is correctly reported as not a DAG — caught server-side,
+  independent of the frontend's connection guard. An empty graph is trivially a
+  DAG.
+- CORS middleware pins the frontend origin (see §11).
 
-Verified with curl: acyclic chain → `is_dag:true`; 2-node cycle → `is_dag:false`;
-empty → `{0,0,true}`.
+Verified by `pytest` (see §9) and curl: acyclic chain → `is_dag:true`; 2-node
+cycle and self-loop → `is_dag:false`; empty → `{0,0,true}`.
 
 ---
 
@@ -308,9 +327,9 @@ Optional: set `VITE_API_URL` if the backend runs elsewhere.
 
 ## 11. Production notes / what I'd change
 
-- **CORS** is currently `allow_origins=["*"]` with `allow_credentials=True` — a
-  contradictory combination. It works here because the frontend sends no
-  credentials; in production I'd pin the deployed origin and drop credentials.
+- **CORS** pins `allow_origins=["http://localhost:3000"]` with
+  `allow_credentials=False` for local dev; in production this becomes the deployed
+  frontend origin.
 - **Field typing** — number fields store strings; I'd add coercion (and a schema)
   if the backend consumed field values.
 - **Undo/redo scope** — history covers structural changes and drag-stops, not

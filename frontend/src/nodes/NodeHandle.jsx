@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Handle, Position } from 'reactflow';
 import { Plus } from 'lucide-react';
 import { useStore } from '@/store';
@@ -12,53 +12,118 @@ const POSITION = {
   bottom: Position.Bottom,
 };
 
-// A right-side source handle rendered as an n8n-style "+": the handle IS the
-// button, so it supports BOTH gestures natively —
-//   • drag  → pull a connection to an existing node (ReactFlow connection)
-//   • click → open the picker to spawn a new connected node
-// Laid out in a flex row (label → stub → +); the handle uses position:static so
-// it sits in that row while ReactFlow still reads its real DOM rect for edges.
+// A right-side source output, n8n-style. There is exactly ONE ReactFlow source
+// Handle per output — the circle POINT at the node edge — so edges always anchor
+// cleanly at the point (no phantom gap). The "+" box beyond a stub is a plain
+// button, shown only while unconnected:
+//   • click → open the node picker
+//   • drag  → forwarded to the point handle, so it pulls a connection with the
+//     "+" riding the wavy line (custom connection line). Drop on a node connects
+//     (the "+" then hides); drop on empty opens the picker.
 function SourcePlusHandle({ nodeId, id, offset, label }) {
   const [open, setOpen] = useState(false);
   const addConnectedNode = useStore((s) => s.addConnectedNode);
+  const connected = useStore((s) => s.edges.some((e) => e.sourceHandle === id));
   const top = `${offset * 100}%`;
+  const draggedRef = useRef(false);
+
+  // Turn a press-drag on the "+" into a connection drag from the point handle by
+  // replaying pointerdown on it once the pointer moves past a small threshold.
+  const onPlusPointerDown = (e) => {
+    if (e.button !== 0) return;
+    draggedRef.current = false;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const node = e.currentTarget.closest('.react-flow__node');
+    const point = node?.querySelector(`.vs-out-point[data-handleid="${id}"]`);
+
+    const move = (ev) => {
+      if (Math.hypot(ev.clientX - startX, ev.clientY - startY) <= 4) return;
+      draggedRef.current = true;
+      cleanup();
+      // Start the connection FROM the point handle (ReactFlow v11 listens on
+      // mousedown) so the line originates at the point, not the "+".
+      point?.dispatchEvent(
+        new MouseEvent('mousedown', {
+          bubbles: true,
+          cancelable: true,
+          button: 0,
+          buttons: 1,
+          clientX: startX,
+          clientY: startY,
+        })
+      );
+    };
+    const cleanup = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', cleanup);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', cleanup);
+  };
 
   return (
     <>
-      {/* stub line from the node edge to the "+" */}
-      <span
-        className="pointer-events-none absolute h-px w-3.5 bg-vs-border-strong"
-        style={{ top, left: '100%', transform: 'translateY(-50%)' }}
-      />
       {label && (
         <span
           className="vs-eyebrow pointer-events-none absolute z-10 whitespace-nowrap text-vs-faint"
-          style={{ top, left: 'calc(100% + 40px)', transform: 'translateY(-50%)', fontSize: '9px', letterSpacing: '0.1em' }}
+          style={{
+            top,
+            // sit after the "+" while unconnected, otherwise just past the point
+            left: connected ? 'calc(100% + 14px)' : 'calc(100% + 54px)',
+            transform: 'translateY(-50%)',
+            fontSize: '9px',
+            letterSpacing: '0.1em',
+          }}
         >
           {label}
         </span>
       )}
-      <AddNodePicker
-        open={open}
-        onOpenChange={setOpen}
-        filter={(t) => hasHandle(t, 'target')}
-        onPick={(type) => addConnectedNode({ sourceId: nodeId, sourceHandle: id, type })}
-        anchor={
-          <Handle
-            type="source"
-            position={Position.Right}
-            id={id}
-            title="Drag to connect · click to add a node"
-            className="vs-plus-handle nodrag nopan"
-            style={{ top, right: -34 }}
-            // click (no drag) opens the picker; a real drag makes a connection
-            onClick={() => setOpen(true)}
+
+      {/* "+" — click to add · drag forwards to the point handle to connect */}
+      {!connected && (
+        <>
+          <span
+            className="pointer-events-none absolute h-px w-5 bg-vs-border-strong"
+            style={{ top, left: 'calc(100% + 7px)', transform: 'translateY(-50%)' }}
+          />
+          <div
+            className="nodrag nopan absolute z-10"
+            style={{ top, left: 'calc(100% + 27px)', transform: 'translateY(-50%)', pointerEvents: 'auto' }}
           >
-            {/* pointer-events:none so ReactFlow sees the handle (not the icon)
-                as the mousedown target and can start a connection */}
-            <Plus size={12} strokeWidth={2.5} style={{ pointerEvents: 'none' }} />
-          </Handle>
-        }
+            <AddNodePicker
+              open={open}
+              onOpenChange={setOpen}
+              filter={(t) => hasHandle(t, 'target')}
+              onPick={(type) => addConnectedNode({ sourceId: nodeId, sourceHandle: id, type })}
+              trigger={
+                <button
+                  aria-label="Add connected node"
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  onPointerDown={onPlusPointerDown}
+                  onClick={() => {
+                    if (draggedRef.current) return; // a drag, not a click
+                    setOpen(true);
+                  }}
+                  className="flex h-5 w-5 items-center justify-center rounded-[4px] border border-vs-border-strong bg-vs-surface text-vs-muted transition-colors hover:border-vs-accent hover:bg-vs-accent-tint hover:text-vs-accent-hover data-[state=open]:border-vs-accent data-[state=open]:bg-vs-accent-tint data-[state=open]:text-vs-accent-hover"
+                >
+                  <Plus size={12} strokeWidth={2.5} />
+                </button>
+              }
+            />
+          </div>
+        </>
+      )}
+
+      {/* the circle point — the single connection handle; edges anchor here */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id={id}
+        title="Drag to connect"
+        className="vs-out-point"
+        style={{ top }}
       />
     </>
   );

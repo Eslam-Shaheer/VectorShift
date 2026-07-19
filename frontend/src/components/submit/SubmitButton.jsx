@@ -1,47 +1,36 @@
 // SubmitButton — POSTs the pipeline to the backend and surfaces the result as a
 // styled toast (num_nodes, num_edges, is_dag).
 
-import { useState } from 'react';
 import { ArrowRight, Loader2 } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
 import { useStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
+import { submitPipeline, PARSE_ENDPOINT } from '@/submit';
 import { ResultToast } from './ResultToast';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000';
-
 export const SubmitButton = () => {
-  const [loading, setLoading] = useState(false);
   const nodes = useStore((s) => s.nodes);
   const edges = useStore((s) => s.edges);
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API_URL}/pipelines/parse`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nodes, edges }),
-      });
-      if (!res.ok) throw new Error(`Server responded ${res.status}`);
-      const data = await res.json();
-      toast({ content: <ResultToast {...data} /> });
-    } catch (err) {
+  // Submit is a POST triggered on click, so it's a mutation (not a query).
+  const { mutate, isPending: loading } = useMutation({
+    mutationFn: () => submitPipeline(nodes, edges),
+    onSuccess: (data) => toast({ content: <ResultToast {...data} /> }),
+    onError: (err) =>
       toast({
         content: (
           <div className="flex flex-col gap-0.5">
             <span className="vs-eyebrow text-vs-danger">Submit failed</span>
             <p className="text-[13px] text-vs-body">
-              {err.message}. Is the backend running on {API_URL}?
+              {err.message}. Is the backend running at {PARSE_ENDPOINT}?
             </p>
           </div>
         ),
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+      }),
+  });
 
+  const handleSubmit = () => mutate();
   const empty = nodes.length === 0;
 
   return (
