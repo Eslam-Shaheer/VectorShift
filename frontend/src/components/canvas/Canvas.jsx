@@ -64,23 +64,35 @@ export const Canvas = () => {
   const [menu, setMenu] = useState(null); // { x, y, nodeId? }
   const [drop, setDrop] = useState(null); // pending "+"-drag drop on empty pane
   const connectingFrom = useRef(null); // { nodeId, handleId } during a "+" drag
+  const connectionMade = useRef(false); // set when a drag actually connects
   const store = useStore(selector, shallow);
   const { nodes, edges } = store;
 
   // Track which source handle a connection drag started from.
   const onConnectStart = useCallback((_e, { nodeId, handleId }) => {
     connectingFrom.current = { nodeId, handleId };
+    connectionMade.current = false;
   }, []);
 
-  // If the drag ends on empty canvas (not a node/handle), open the picker at the
-  // drop point to create a node already wired to the source — n8n behavior.
+  // A real connection landed on a handle — remember it so onConnectEnd doesn't
+  // also pop the "add node" picker.
+  const onConnect = useCallback(
+    (connection) => {
+      connectionMade.current = true;
+      store.onConnect(connection);
+    },
+    [store]
+  );
+
+  // Only when the drag ends on empty canvas (no connection made) do we open the
+  // picker at the drop point to create a node wired to the source — n8n behavior.
   const onConnectEnd = useCallback(
     (event) => {
       const from = connectingFrom.current;
       connectingFrom.current = null;
-      if (!from) return;
+      if (!from || connectionMade.current) return;
       const droppedOnPane = event.target?.classList?.contains('react-flow__pane');
-      if (!droppedOnPane) return; // landed on a node/handle → normal onConnect
+      if (!droppedOnPane) return; // landed on a node/handle → no picker
 
       const bounds = reactFlowWrapper.current.getBoundingClientRect();
       const flowPosition = reactFlowInstance.project({
@@ -161,7 +173,7 @@ export const Canvas = () => {
         edges={edges}
         onNodesChange={store.onNodesChange}
         onEdgesChange={store.onEdgesChange}
-        onConnect={store.onConnect}
+        onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         isValidConnection={store.isValidConnection}
@@ -184,6 +196,7 @@ export const Canvas = () => {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         deleteKeyCode={['Backspace', 'Delete']}
+        connectionRadius={28}
         proOptions={proOptions}
         snapGrid={[gridSize, gridSize]}
         connectionLineComponent={ConnectionLine}

@@ -62,16 +62,26 @@ function SourcePlusHandle({ nodeId, id, offset, label }) {
       cleanup();
       if (!started) return;
       finishLinking();
-      // Resolve a target handle under the cursor.
+      // Find the node under the cursor, then snap to its NEAREST input handle so
+      // stacked inputs (e.g. system / prompt) are easy to target precisely.
       const el = document.elementFromPoint(ev.clientX, ev.clientY);
-      const handleEl = el?.closest('.react-flow__handle-left');
-      const targetNodeEl = (handleEl ?? el)?.closest('.react-flow__node');
+      const targetNodeEl = el?.closest('.react-flow__node');
       if (!targetNodeEl) return;
       const target = targetNodeEl.getAttribute('data-id');
-      const targetHandle =
-        handleEl?.getAttribute('data-handleid') ??
-        targetNodeEl.querySelector('.react-flow__handle-left')?.getAttribute('data-handleid');
-      if (!target || !targetHandle) return;
+      const handles = [...targetNodeEl.querySelectorAll('.react-flow__handle-left')];
+      if (!target || handles.length === 0) return;
+      let best = null;
+      let bestDist = Infinity;
+      for (const h of handles) {
+        const r = h.getBoundingClientRect();
+        const d = Math.hypot(r.left + r.width / 2 - ev.clientX, r.top + r.height / 2 - ev.clientY);
+        if (d < bestDist) {
+          bestDist = d;
+          best = h;
+        }
+      }
+      const targetHandle = best?.getAttribute('data-handleid');
+      if (!targetHandle) return;
       const conn = { source: nodeId, sourceHandle: id, target, targetHandle };
       if (isValidConnection(conn)) onConnect(conn);
     };

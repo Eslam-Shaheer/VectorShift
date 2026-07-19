@@ -120,6 +120,15 @@
   transform: scale(1.15);
 }
 
+/* Enlarge the invisible hit/drop zone around target (left) handles so it's easy
+   to aim at a specific input even when several are stacked close together. */
+.react-flow__handle.react-flow__handle-left::before {
+  content: '';
+  position: absolute;
+  inset: -9px;
+  border-radius: 9999px;
+}
+
 /* Source "+" handle: the handle itself is the add/connect button, so it drags
    to connect (native) and clicks to open the picker. Kept ReactFlow-absolute
    (offset just outside the node edge) so connection init works. */

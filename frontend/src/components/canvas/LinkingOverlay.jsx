@@ -1,22 +1,23 @@
 import { createPortal } from 'react-dom';
-import { getBezierPath, Position } from 'reactflow';
+import { getSmoothStepPath, Position } from 'reactflow';
 import { useStore } from '@/store';
 
-// Full-screen overlay that draws the "+"-drag connection in SCREEN space: a wavy
-// accent bezier from the source point to the cursor, with the "+" chip riding
-// the moving end. Screen coords, so it's independent of the canvas transform.
+// Full-screen overlay that draws the "+"-drag connection in SCREEN space: an
+// orthogonal accent path from the source point to the cursor, with the "+" chip
+// riding the moving end. Screen coords, so it's independent of the canvas transform.
 export function LinkingOverlay() {
   const linking = useStore((s) => s.linking);
   if (!linking) return null;
 
   const { fromX, fromY, toX, toY } = linking;
-  const [path] = getBezierPath({
+  const [path] = getSmoothStepPath({
     sourceX: fromX,
     sourceY: fromY,
     sourcePosition: Position.Right,
     targetX: toX,
     targetY: toY,
     targetPosition: Position.Left,
+    borderRadius: 12,
   });
 
   return createPortal(

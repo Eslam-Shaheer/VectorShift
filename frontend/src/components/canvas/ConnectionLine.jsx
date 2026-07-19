@@ -1,16 +1,17 @@
-import { getBezierPath, Position } from 'reactflow';
+import { getSmoothStepPath, Position } from 'reactflow';
 
-// The line shown while dragging out a connection. Draws a wavy accent bezier
-// from the source to the cursor, with the "+" chip riding at the moving end —
-// so it reads as "dragging the + out with the line" (n8n behavior).
+// The line shown while dragging out a connection. Draws an orthogonal accent
+// path from the source to the cursor, with the "+" chip riding at the moving end
+// — so it reads as "dragging the + out with the line" (n8n behavior).
 export function ConnectionLine({ fromX, fromY, toX, toY, fromPosition, toPosition }) {
-  const [path] = getBezierPath({
+  const [path] = getSmoothStepPath({
     sourceX: fromX,
     sourceY: fromY,
     sourcePosition: fromPosition ?? Position.Right,
     targetX: toX,
     targetY: toY,
     targetPosition: toPosition ?? Position.Left,
+    borderRadius: 12,
   });
 
   return (
