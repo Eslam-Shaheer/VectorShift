@@ -1,8 +1,8 @@
-import { Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useStore } from "@/store";
-import { NodeHandle } from "./NodeHandle";
-import { NodeField } from "./NodeField";
+import { Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useStore } from '@/store';
+import { NodeHandle } from './NodeHandle';
+import { NodeField } from './NodeField';
 
 // Groups handles by edge (left/right/top/bottom) and assigns each an even
 // offset along that edge: (i + 1) / (n + 1). Replaces the hand-tuned
@@ -83,6 +83,7 @@ export function BaseNode({ id, data, selected, config }) {
         )}
       </header>
 
+      {/* fields: each config field → the matching themed control */}
       {config.fields?.length > 0 && (
         <div className="flex flex-col gap-2.5">
           {config.fields.map((field) => (
@@ -96,6 +97,7 @@ export function BaseNode({ id, data, selected, config }) {
         </div>
       )}
 
+      {/* handles: static + dynamic, evenly spaced along each edge */}
       {handles.map((h) => (
         <NodeHandle
           key={`${h.kind}-${h.id}`}

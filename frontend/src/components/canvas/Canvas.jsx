@@ -204,14 +204,17 @@ export const Canvas = () => {
       >
         <Background variant={BackgroundVariant.Dots} gap={gridSize} size={1.5} color="var(--color-vs-canvas-dot)" />
         <Controls showInteractive={false} />
-        <MiniMap
-          pannable
-          zoomable
-          className="!bg-vs-surface-sunk"
-          maskColor="transparent"
-          nodeColor="var(--color-vs-handle)"
-          nodeStrokeColor="var(--color-vs-border-strong)"
-        />
+        {/* Hidden on an empty canvas; darker node marks so it reads on cream. */}
+        {nodes.length > 0 && (
+          <MiniMap
+            pannable
+            zoomable
+            className="!bg-vs-surface-sunk"
+            maskColor="rgba(26, 24, 19, 0.08)"
+            nodeColor="var(--color-vs-muted)"
+            nodeStrokeColor="var(--color-vs-border-strong)"
+          />
+        )}
 
         <Panel position="top-right" className="flex gap-1">
           <PanelButton title="Undo (⌘Z)" onClick={store.undo} disabled={!store.canUndo}>
